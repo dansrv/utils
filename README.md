@@ -1,28 +1,66 @@
 # utils
 
-Small host-wide shell commands, installed once via symlinks and shared across every repo on the box.
+Small host-wide shell commands. One clone per machine, installed once, then `git pull` updates every command everywhere.
 
-## Contents
+| Command | What it does |
+|---|---|
+| `showgit` | One-glance git dashboard for the repo you're standing in |
+| `new-claude` | Start a fresh Claude Code session at the repo root |
+| `resume-claude` | Resume a previous Claude Code session at the repo root |
 
-| Command | Script | What it does |
-|---|---|---|
-| `showgit` | `showgit.sh` | One-glance git dashboard for the repo you're standing in |
-| `new-claude` | `new-claude.sh` | Start a fresh Claude Code session at the repo root |
-| `resume-claude` | `resume-claude.sh` | Resume a previous Claude Code session at the repo root |
+The real programs are the `*.sh` files at the top level. `bin/` holds thin per-shell shims that locate them relative to themselves, so the clone can live anywhere.
 
 ## Install
 
-Clone, then symlink into a directory on your `PATH` (the symlink name is the command name, so the `.sh` suffix disappears):
+Clone to `~/utils` on every machine (any path works, `~/utils` is just the convention used below).
+
+### Linux / WSL
 
 ```bash
-git clone git@github.com:dansrv/utils.git ~/utils
-
-ln -s ~/utils/showgit.sh       ~/.local/bin/showgit
-ln -s ~/utils/new-claude.sh    ~/.local/bin/new-claude
-ln -s ~/utils/resume-claude.sh ~/.local/bin/resume-claude
+git clone https://github.com/dansrv/utils.git ~/utils
+~/utils/install.sh            # symlinks into ~/.local/bin
 ```
 
-Because the scripts run through symlinks, a `git pull` in `~/utils` updates every command immediately — there is no copy step.
+`install.sh` takes an optional target directory. Make sure it is on your `PATH`.
+
+### Windows (PowerShell, cmd and Git Bash)
+
+Requires [Git for Windows](https://git-scm.com); the scripts run under its `bash.exe`.
+
+```powershell
+git clone https://github.com/dansrv/utils.git $HOME\utils
+& $HOME\utils\install.ps1     # adds utils\bin to the user PATH
+```
+
+Open a new terminal afterwards. All three shells read the same PATH entry: PowerShell runs the `.ps1` shims, cmd the `.cmd` shims, Git Bash the extensionless bash wrappers. If PowerShell refuses to run the shims, allow local scripts once:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+### macOS
+
+Same as Linux, but `showgit` needs bash 4 (it uses `mapfile`) and macOS ships bash 3:
+
+```bash
+brew install bash
+git clone https://github.com/dansrv/utils.git ~/utils
+~/utils/install.sh
+```
+
+The scripts start with `#!/usr/bin/env bash`, so Homebrew's bash must come before `/bin` on your `PATH`.
+
+## Update
+
+```bash
+git -C ~/utils pull
+```
+
+Nothing else; the symlinks and PATH entry point at the clone.
+
+## Uninstall
+
+Linux/macOS: delete the three symlinks from `~/.local/bin`. Windows: remove the `utils\bin` entry from your user PATH (Settings → System → About → Advanced system settings → Environment Variables). Then delete the clone.
 
 ## showgit
 
@@ -60,4 +98,19 @@ resume-claude <session-id>     # straight to that session
 resume-claude --fork-session   # resume into a new session id
 ```
 
-The only difference between the two scripts is the `--resume` flag. Both pass `--dangerously-skip-permissions`, so use them on machines where you trust the repos you point them at.
+The only difference between the two scripts is the `--resume` flag.
+
+**Both pass `--dangerously-skip-permissions`**, which lets Claude Code edit files and run commands without asking. Only use them in repos you trust, and read the scripts before installing on a shared machine.
+
+## Layout
+
+```
+showgit.sh, new-claude.sh, resume-claude.sh   the commands
+bin/<cmd>        bash wrapper   (Git Bash on Windows)
+bin/<cmd>.ps1    PowerShell shim
+bin/<cmd>.cmd    cmd shim
+bin/_gitbash.ps1 finds Git for Windows bash.exe for the .ps1 shims
+install.sh       Linux / WSL / macOS: symlinks into ~/.local/bin
+install.ps1      Windows: adds bin\ to the user PATH
+.gitattributes   LF for bash files, CRLF for the Windows shims
+```
