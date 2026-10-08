@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Git Bash wrapper: resolves resume-claude.sh relative to this file so the clone can live anywhere.
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$here/../resume-claude.sh" "$@"
