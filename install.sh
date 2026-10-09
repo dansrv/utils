@@ -19,7 +19,7 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 dest="${1:-$HOME/.local/bin}"
 mkdir -p "$dest"
 
-for cmd in showgit new-claude resume-claude; do
+for cmd in showgit new-claude resume-claude claude-statusline; do
   ln -sfn "$here/$cmd.sh" "$dest/$cmd"
   echo "linked  $dest/$cmd -> $here/$cmd.sh"
 done

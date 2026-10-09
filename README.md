@@ -7,6 +7,7 @@ Small host-wide shell commands. One clone per machine, installed once, then `git
 | `showgit` | One-glance git dashboard for the repo you're standing in |
 | `new-claude` | Start a fresh Claude Code session at the repo root |
 | `resume-claude` | Resume a previous Claude Code session at the repo root |
+| `claude-statusline` | The Claude Code status line: one tested renderer, and the installer that points Claude Code at it |
 
 The real programs are the `*.sh` files at the top level. `bin/` holds thin per-shell shims that locate them relative to themselves, so the clone can live anywhere.
 
@@ -56,7 +57,7 @@ The scripts start with `#!/usr/bin/env bash`, so Homebrew's bash must come befor
 git -C ~/utils pull
 ```
 
-Nothing else; the symlinks and PATH entry point at the clone.
+Nothing else; the symlinks and PATH entry point at the clone. The status line, once installed, also points at the clone, so a pull updates it too.
 
 ## Uninstall
 
@@ -100,12 +101,35 @@ resume-claude --fork-session   # resume into a new session id
 
 The only difference between the two scripts is the `--resume` flag.
 
+## claude-statusline
+
+Claude Code shows a status line by running a command you configure and printing its output, with a JSON snapshot of the session on the command's stdin ([docs](https://code.claude.com/docs/en/statusline)). `claude-statusline.py` is that command, kept here so every machine shows the same line and a `git pull` updates it.
+
+```
+Fable 5.1 (high effort) | ctx 11% | 5h 17% (53m) · 7d 5%
+```
+
+Model, effort level, context window used, then the five-hour usage window with the time until it resets and the seven-day window. Anything the session does not have yet (no rate limits before the first reply, no context figure right after `/compact`) is left out rather than shown as a placeholder.
+
+```bash
+claude-statusline install       # writes the statusLine key into ~/.claude/settings.json
+claude-statusline show          # every fixture rendered in colour, plus what settings hold now
+claude-statusline test          # the fixtures and the settings edit, offline, under a second
+claude-statusline uninstall     # removes the key; the script stays
+claude-statusline render        # what Claude Code runs: stdin JSON -> the line
+```
+
+`install` writes the absolute path of this clone and of `/usr/bin/python3` into settings (one plugin cannot do this: Claude Code drops a `statusLine` key from plugin settings, which is why this is a script here and not a plugin). It keeps every other key and their order, refuses to touch a settings file it cannot parse, and honours `CLAUDE_CONFIG_DIR`. Re-running it is harmless. Takes effect at the next assistant message in a running session. The countdown is computed when the line is redrawn, so between messages it is as stale as the last reply; Claude Code redraws it when the window actually resets.
+
+To change the line, edit `render()` in `claude-statusline.py`, add or adjust a fixture, run `claude-statusline test`, commit, and `git pull` on the other machines. Verified on Linux and WSL; macOS should work as is; untested on Windows (the installer would write a Windows python path, which has not been tried).
+
 **Both pass `--dangerously-skip-permissions`**, which lets Claude Code edit files and run commands without asking. Only use them in repos you trust, and read the scripts before installing on a shared machine.
 
 ## Layout
 
 ```
 showgit.sh, new-claude.sh, resume-claude.sh   the commands
+claude-statusline.sh + claude-statusline.py   the status line (bash picks the interpreter, python does the rest)
 bin/<cmd>        bash wrapper   (Git Bash on Windows)
 bin/<cmd>.ps1    PowerShell shim
 bin/<cmd>.cmd    cmd shim
