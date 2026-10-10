@@ -44,7 +44,13 @@ import sys
 import tempfile
 import time
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
+
+# Windows python defaults stdout to the ANSI code page (cp1252) and "\r\n"; the
+# line must be the same UTF-8 bytes with "\n" on every OS, so set it here rather
+# than rely on PYTHONUTF8 being in the environment Claude Code runs us from.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", newline="\n")
 
 RST = "\033[0m"
 DIM = "\033[2m"
@@ -307,7 +313,7 @@ def cmd_test():
     # the real entry point on the full fixture, live clock
     r = subprocess.run([sys.executable, os.path.realpath(__file__), "render"],
                        input=json.dumps(_payload(reset=int(time.time()) + 3180)).encode(), capture_output=True, timeout=10)
-    got = strip_ansi(r.stdout.decode().rstrip("\n"))
+    got = strip_ansi(r.stdout.decode("utf-8").rstrip("\r\n"))
     ok = r.returncode == 0 and got == FIXTURES[0][2]
     failed += not ok
     print(("ok    " if ok else "FAIL  ") + "stdin-full" + ("" if ok else ": got " + got))

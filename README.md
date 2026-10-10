@@ -121,7 +121,7 @@ claude-statusline render        # what Claude Code runs: stdin JSON -> the line
 
 `install` writes the absolute path of this clone and of `/usr/bin/python3` into settings (one plugin cannot do this: Claude Code drops a `statusLine` key from plugin settings, which is why this is a script here and not a plugin). It keeps every other key and their order, refuses to touch a settings file it cannot parse, and honours `CLAUDE_CONFIG_DIR`. Re-running it is harmless. Takes effect at the next assistant message in a running session. The countdown is computed when the line is redrawn, so between messages it is as stale as the last reply; Claude Code redraws it when the window actually resets.
 
-To change the line, edit `render()` in `claude-statusline.py`, add or adjust a fixture, run `claude-statusline test`, commit, and `git pull` on the other machines. Verified on Linux and WSL; macOS should work as is; untested on Windows (the installer would write a Windows python path, which has not been tried).
+To change the line, edit `render()` in `claude-statusline.py`, add or adjust a fixture, run `claude-statusline test`, commit, and `git pull` on the other machines. Verified on Linux, WSL and Windows (Claude Code runs the command through Git Bash there; the installer writes the Windows python path); macOS should work as is.
 
 **Both pass `--dangerously-skip-permissions`**, which lets Claude Code edit files and run commands without asking. Only use them in repos you trust, and read the scripts before installing on a shared machine.
 
